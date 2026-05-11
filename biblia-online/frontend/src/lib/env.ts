@@ -1,0 +1,7 @@
+export function getPublicApiUrl() {
+  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+}
+
+export function getSiteUrl() {
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+}

@@ -1,0 +1,13 @@
+# Traefik estático (referência). Em Swarm, use labels nos serviços (ver docker/swarm/stack.yml).
+api:
+  dashboard: true
+  insecure: true
+
+entryPoints:
+  web:
+    address: ":80"
+
+providers:
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true

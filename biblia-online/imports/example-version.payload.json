@@ -1,0 +1,23 @@
+{
+  "languageCode": "pt",
+  "versionCode": "exemplo-pd",
+  "versionName": "Exemplo (substituir por versão real)",
+  "books": [
+    {
+      "canonicalNumber": 1,
+      "slug": "genesis",
+      "title": "Gênesis",
+      "chapters": [
+        {
+          "number": 1,
+          "verses": [
+            {
+              "number": 1,
+              "text": "Substitua por texto licenciado adequadamente."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
