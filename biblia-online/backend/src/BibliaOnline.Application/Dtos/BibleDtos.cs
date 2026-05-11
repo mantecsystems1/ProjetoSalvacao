@@ -27,3 +27,9 @@ public record SearchHitDto(
     int VerseNumber,
     string Text,
     string? Formatted);
+
+public record SearchResultDto(
+    IReadOnlyList<SearchHitDto> Items,
+    int Page,
+    int PageSize,
+    bool HasMore);

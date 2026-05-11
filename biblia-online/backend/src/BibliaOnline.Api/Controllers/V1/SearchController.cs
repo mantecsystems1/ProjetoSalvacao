@@ -8,6 +8,6 @@ namespace BibliaOnline.Api.Controllers.V1;
 public sealed class SearchController(IVerseSearchService search) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> Query([FromQuery] string q, [FromQuery] Guid? versionId, [FromQuery] int limit = 25, CancellationToken ct = default)
-        => Ok(await search.SearchAsync(q, versionId, limit, ct));
+    public async Task<IActionResult> Query([FromQuery] string q, [FromQuery] Guid? versionId, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken ct = default)
+        => Ok(await search.SearchAsync(q, versionId, page, pageSize, ct));
 }

@@ -7,6 +7,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-biblia_online}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Mapeia o script SQL para ser executado apenas na criação do banco
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s

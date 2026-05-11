@@ -1,0 +1,26 @@
+{
+  "name": "biblia-importer",
+  "version": "1.0.0",
+  "description": "Sistema de importação bíblica multi-formato",
+  "main": "scripts/importer.ts",
+  "scripts": {
+    "import": "ts-node importer.ts",
+    "import-books": "ts-node importer.ts --stage=books",
+    "import-chapters": "ts-node importer.ts --stage=chapters",
+    "import-verses": "ts-node importer.ts --stage=verses",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "pg": "^8.11.3",
+    "xml2js": "^0.6.2",
+    "dotenv": "^16.4.5",
+    "uuid": "^9.0.1",
+    "franc": "^6.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/pg": "^8.11.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
