@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { BibleVersion } from "@/lib/types";
 import { getPublicApiUrl } from "@/lib/env";
 
+export const dynamic = "force-dynamic";
+
 export const revalidate = 3600;
 
 async function fetchVersions(): Promise<BibleVersion[]> {
@@ -38,14 +40,14 @@ export default async function HomePage() {
               Navegue por livros, capítulos e versículos com busca instantânea, favoritos, histórico, PWA offline e modo escuro.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Link href="/buscar" className={cn(buttonVariants())}>
+              <Link href="/livros" className={cn(buttonVariants())}>
+                Ler Bíblia
+              </Link>
+              <Link href="/buscar" className={cn(buttonVariants({ variant: "outline" }))}>
                 Buscar versículos
               </Link>
-              <Link href="/favoritos" className={cn(buttonVariants({ variant: "outline" }))}>
+              <Link href="/favoritos" className={cn(buttonVariants({ variant: "ghost" }))}>
                 Meus favoritos
-              </Link>
-              <Link href="/perfil" className={cn(buttonVariants({ variant: "ghost" }))}>
-                Perfil
               </Link>
             </div>
           </div>
@@ -71,7 +73,7 @@ export default async function HomePage() {
                       <p className="font-medium">{version.name}</p>
                       <p className="text-xs text-muted-foreground">{version.code}</p>
                     </div>
-                    <Link href={`/buscar?version=${encodeURIComponent(version.code)}`} className={cn(buttonVariants({ size: "icon", variant: "outline" }))}>
+                    <Link href={`/livros/${encodeURIComponent(version.code)}`} className={cn(buttonVariants({ size: "icon", variant: "outline" }))}>
                       ▶
                     </Link>
                   </div>
@@ -90,8 +92,8 @@ export default async function HomePage() {
               <CardDescription>{version.description ?? `Código ${version.code}`}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
-              <Link href={`/buscar?version=${encodeURIComponent(version.code)}`} className={cn(buttonVariants({ size: "sm" }))}>
-                Buscar nesta versão
+              <Link href={`/livros/${encodeURIComponent(version.code)}`} className={cn(buttonVariants({ size: "sm" }))}>
+                Abrir Bíblia
               </Link>
               <Link href={`/buscar?version=${encodeURIComponent(version.code)}`} className={cn(buttonVariants({ size: "sm", variant: "outline" }))}>
                 Buscar nesta versão

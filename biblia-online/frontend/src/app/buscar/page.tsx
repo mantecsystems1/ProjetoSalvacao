@@ -91,6 +91,11 @@ export default function BuscarPage() {
   const hits = result?.items ?? [];
   const hasMore = result?.hasMore ?? false;
 
+  const selectedVersion = useMemo(() => {
+    const versions = versionsQuery.data ?? [];
+    return versions.find((version) => version.id === versionId);
+  }, [versionsQuery.data, versionId]);
+
   const versionOptions = useMemo(() => {
     const versions = versionsQuery.data ?? [];
     return versions.map((version) => (
@@ -144,10 +149,18 @@ export default function BuscarPage() {
             </select>
           </div>
 
-          <div className="md:col-span-2 flex items-center gap-3">
+          <div className="md:col-span-2 flex flex-wrap items-center gap-3">
             <Button type="button" disabled={!enabled || searchQuery.isFetching} onClick={() => searchQuery.refetch()}>
               Buscar agora
             </Button>
+            {selectedVersion ? (
+              <Link
+                href={`/livros/${encodeURIComponent(selectedVersion.code)}`}
+                className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
+              >
+                Abrir Bíblia completa
+              </Link>
+            ) : null}
             <p className="text-sm text-muted-foreground">
               {!enabled
                 ? "Digite pelo menos 2 caracteres para iniciar a busca."
@@ -217,6 +230,12 @@ export default function BuscarPage() {
                     className={cn(buttonVariants({ size: "sm", variant: "outline" }), "rounded-full")}
                   >
                     Abrir capítulo
+                  </Link>
+                  <Link
+                    href={`/read/${encodeURIComponent(hit.versionCode)}/${encodeURIComponent(hit.bookSlug)}/${hit.chapterNumber}`}
+                    className={cn(buttonVariants({ size: "sm", variant: "ghost" }), "rounded-full")}
+                  >
+                    Abrir direto
                   </Link>
                 </div>
               </CardContent>

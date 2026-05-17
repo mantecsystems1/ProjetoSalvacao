@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "BibliaOnline.Domain": {
+      "commandName": "Project",
+      "remoteDebugEnabled": true
+    }
+  }
+}

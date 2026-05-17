@@ -2,118 +2,126 @@ version: "3.9"
 
 x-common-env-api: &common-env-api
   ASPNETCORE_ENVIRONMENT: Production
+
   Jwt__Issuer: ${JWT_ISSUER:-biblia-online}
   Jwt__Audience: ${JWT_AUDIENCE:-biblia-online-clients}
   Jwt__SigningKey: ${JWT_SIGNING_KEY:?defina JWT_SIGNING_KEY}
   Jwt__AccessTokenMinutes: ${JWT_ACCESS_TOKEN_MINUTES:-10080}
+
   Meilisearch__Url: http://meilisearch:7700
   Meilisearch__ApiKey: ${MEILI_MASTER_KEY:?defina MEILI_MASTER_KEY}
   Meilisearch__VersesIndex: ${MEILI_INDEX:-verses}
+
   Meilisearch__SyncOnStartup: ${MEILI_SYNC_ON_STARTUP:-true}
+
   Cors__Origins__0: https://${DOMAIN:?defina DOMAIN}
 
 services:
-  traefik:
-    image: traefik:v3.2
-    command:
-      - "--providers.docker.swarmMode=true"
-      - "--providers.docker.exposedByDefault=false"
-      - "--providers.docker.network=biblia_public"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.le.acme.tlschallenge=true"
-      - "--certificatesresolvers.le.acme.email=${ACME_EMAIL:?defina ACME_EMAIL}"
-      - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
-    ports:
-      - target: 80
-        published: 80
-        protocol: tcp
-        mode: host
-      - target: 443
-        published: 443
-        protocol: tcp
-        mode: host
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - traefik_letsencrypt:/letsencrypt
-    networks:
-      - biblia_public
-    deploy:
-      mode: global
-      placement:
-        constraints:
-          - node.role == manager
 
   postgres:
     image: postgres:16-alpine
+
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-biblia}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-biblia_online}
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
     networks:
       - biblia_internal
+
     deploy:
       replicas: 1
+
       placement:
         constraints:
           - node.role == manager
 
   meilisearch:
     image: getmeili/meilisearch:v1.11
+
     environment:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?defina MEILI_MASTER_KEY}
       MEILI_NO_ANALYTICS: "true"
+
     volumes:
       - meili_data:/meili_data
+
     networks:
       - biblia_internal
+
     command: ["meilisearch", "--http-addr", "0.0.0.0:7700"]
+
     deploy:
       replicas: 1
 
   api:
     image: ${API_IMAGE:?defina API_IMAGE}
+
     environment:
       <<: *common-env-api
+
       ConnectionStrings__DefaultConnection: >-
-        Host=postgres;Port=5432;Database=${POSTGRES_DB:-biblia_online};Username=${POSTGRES_USER:-biblia};Password=${POSTGRES_PASSWORD}
+        Host=postgres;
+        Port=5432;
+        Database=${POSTGRES_DB:-biblia_online};
+        Username=${POSTGRES_USER:-biblia};
+        Password=${POSTGRES_PASSWORD}
+
       ADMIN_REINDEX_KEY: ${ADMIN_REINDEX_KEY:-}
+
     networks:
       - biblia_internal
-      - biblia_public
+      - traefik-public
+
     deploy:
       replicas: 2
+
       labels:
         - "traefik.enable=true"
-        - "traefik.docker.network=biblia_public"
+
+        - "traefik.docker.network=traefik-public"
+
         - "traefik.http.routers.biblia-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
+
         - "traefik.http.routers.biblia-api.entrypoints=websecure"
+
         - "traefik.http.routers.biblia-api.tls.certresolver=le"
+
         - "traefik.http.services.biblia-api.loadbalancer.server.port=8080"
 
   web:
     image: ${WEB_IMAGE:?defina WEB_IMAGE}
+
     environment:
       NEXT_PUBLIC_API_URL: https://${DOMAIN}
       NEXT_PUBLIC_SITE_URL: https://${DOMAIN}
+
     networks:
-      - biblia_public
+      - traefik-public
+
     deploy:
       replicas: 2
+
       labels:
         - "traefik.enable=true"
-        - "traefik.docker.network=biblia_public"
+
+        - "traefik.docker.network=traefik-public"
+
         - "traefik.http.routers.biblia-web.rule=Host(`${DOMAIN}`) && !PathPrefix(`/api`)"
+
         - "traefik.http.routers.biblia-web.entrypoints=websecure"
+
         - "traefik.http.routers.biblia-web.tls.certresolver=le"
+
         - "traefik.http.services.biblia-web.loadbalancer.server.port=3000"
 
 networks:
-  biblia_public:
-    driver: overlay
-    attachable: true
+  traefik-public:
+    external: true
+
   biblia_internal:
     driver: overlay
     internal: true
@@ -121,4 +129,3 @@ networks:
 volumes:
   postgres_data:
   meili_data:
-  traefik_letsencrypt:

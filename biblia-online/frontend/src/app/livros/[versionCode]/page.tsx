@@ -39,7 +39,12 @@ export default async function BooksPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-10">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Livros</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight">Livros</h1>
+          <Link href="/livros" className={cn(buttonVariants({ size: "sm", variant: "outline" }))}>
+            Trocar versão
+          </Link>
+        </div>
         <p className="text-muted-foreground">{v.name}</p>
       </header>
 
