@@ -29,7 +29,7 @@ public sealed class BibleReaderService(AppDbContext db) : IBibleReaderService
     {
         var normalized = code.Trim().ToLowerInvariant();
         return await db.BibleVersions.AsNoTracking()
-            .Where(x => x.IsActive && x.Code == normalized)
+            .Where(x => x.IsActive && x.Code.ToLower() == normalized)
             .Select(x => new BibleVersionDto(x.Id, x.LanguageId, x.Code, x.Name, x.Description, x.IsActive))
             .FirstOrDefaultAsync(ct);
     }

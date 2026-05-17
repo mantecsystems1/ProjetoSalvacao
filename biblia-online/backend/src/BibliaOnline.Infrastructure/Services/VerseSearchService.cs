@@ -4,6 +4,7 @@ using BibliaOnline.Infrastructure.Search;
 using Meilisearch;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Text.RegularExpressions;
 
 namespace BibliaOnline.Infrastructure.Services;
 
@@ -11,12 +12,16 @@ public sealed class VerseSearchService(IOptions<MeilisearchOptions> options, ILo
 {
     private readonly MeilisearchOptions _opt = options.Value;
 
-    public async Task<IReadOnlyList<SearchHitDto>> SearchAsync(string query, Guid? bibleVersionId, int limit, CancellationToken ct = default)
+    public async Task<SearchResultDto> SearchAsync(string query, Guid? bibleVersionId, int page, int pageSize, CancellationToken ct = default)
     {
-        limit = Math.Clamp(limit, 1, 100);
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
         var q = (query ?? string.Empty).Trim();
         if (q.Length < 2)
-            return Array.Empty<SearchHitDto>();
+            return new SearchResultDto(Array.Empty<SearchHitDto>(), page, pageSize, HasMore: false);
+
+        var (searchText, chapterFilter, verseFilter) = ParseReferenceQuery(q);
 
         try
         {
@@ -25,13 +30,27 @@ public sealed class VerseSearchService(IOptions<MeilisearchOptions> options, ILo
 
             var sq = new SearchQuery
             {
-                Limit = limit,
-                AttributesToHighlight = new[] { "text" }
+                Limit = pageSize,
+                Offset = (page - 1) * pageSize,
+                AttributesToHighlight = new[] { "text" },
+                HighlightPreTag = "<mark>",
+                HighlightPostTag = "</mark>"
             };
-            if (bibleVersionId.HasValue)
-                sq.Filter = $"bibleVersionId = \"{bibleVersionId.Value}\"";
 
-            var result = await index.SearchAsync<VerseDocument>(q, sq, ct);
+            var filters = new List<string>();
+            if (bibleVersionId.HasValue)
+                filters.Add($"bibleVersionId = \"{bibleVersionId.Value}\"");
+
+            if (chapterFilter.HasValue)
+                filters.Add($"chapterNumber = {chapterFilter.Value}");
+
+            if (verseFilter.HasValue)
+                filters.Add($"verseNumber = {verseFilter.Value}");
+
+            if (filters.Count > 0)
+                sq.Filter = string.Join(" AND ", filters);
+
+            var result = await index.SearchAsync<VerseDocument>(searchText, sq, ct);
             var hits = result.Hits ?? Array.Empty<VerseDocument>();
             var list = new List<SearchHitDto>(hits.Count);
 
@@ -53,12 +72,26 @@ public sealed class VerseSearchService(IOptions<MeilisearchOptions> options, ILo
                     Formatted: null));
             }
 
-            return list;
+            return new SearchResultDto(list, page, pageSize, hits.Count == pageSize);
         }
         catch (Exception ex)
         {
-            log.LogWarning(ex, "Meilisearch indisponível; retornando lista vazia.");
-            return Array.Empty<SearchHitDto>();
+            log.LogWarning(ex, "Meilisearch indisponível; retornando resultados vazios.");
+            return new SearchResultDto(Array.Empty<SearchHitDto>(), page, pageSize, HasMore: false);
         }
+    }
+
+    private static (string Query, int? Chapter, int? Verse) ParseReferenceQuery(string query)
+    {
+        var trimmed = query.Trim();
+        var match = Regex.Match(trimmed, @"^(.+?)\s+(\d+)(?::|\s+)?(\d+)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        if (!match.Success)
+            return (trimmed, null, null);
+
+        var bookPart = match.Groups[1].Value.Trim();
+        var chapter = int.Parse(match.Groups[2].Value);
+        var verse = match.Groups[3].Success ? int.Parse(match.Groups[3].Value) as int? : null;
+
+        return (string.IsNullOrWhiteSpace(bookPart) ? trimmed : bookPart, chapter, verse);
     }
 }

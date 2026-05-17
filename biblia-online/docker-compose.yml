@@ -1,12 +1,17 @@
 services:
   postgres:
     image: postgres:16-alpine
+    container_name: biblia-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-biblia}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-biblia_dev}
       POSTGRES_DB: ${POSTGRES_DB:-biblia_online}
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -15,9 +20,13 @@ services:
 
   meilisearch:
     image: getmeili/meilisearch:v1.11
+    container_name: biblia-meilisearch
+    restart: unless-stopped
     environment:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-dev_master_key_change_me}
       MEILI_NO_ANALYTICS: "true"
+    ports:
+      - "7700:7700"
     volumes:
       - meili_data:/meili_data
     command: ["meilisearch", "--http-addr", "0.0.0.0:7700"]
@@ -26,6 +35,8 @@ services:
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
+    container_name: biblia-api
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
@@ -33,17 +44,28 @@ services:
         condition: service_started
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+
       ConnectionStrings__DefaultConnection: >-
-        Host=postgres;Port=5432;Database=${POSTGRES_DB:-biblia_online};Username=${POSTGRES_USER:-biblia};Password=${POSTGRES_PASSWORD:-biblia_dev}
+        Host=postgres;
+        Port=5432;
+        Database=${POSTGRES_DB:-biblia_online};
+        Username=${POSTGRES_USER:-biblia};
+        Password=${POSTGRES_PASSWORD:-biblia_dev}
+
       Jwt__Issuer: ${JWT_ISSUER:-biblia-online}
       Jwt__Audience: ${JWT_AUDIENCE:-biblia-online-clients}
-      Jwt__SigningKey: ${JWT_SIGNING_KEY:?defina JWT_SIGNING_KEY com pelo menos 32 caracteres}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:-development_signing_key_minimum_32_chars_long}
       Jwt__AccessTokenMinutes: ${JWT_ACCESS_TOKEN_MINUTES:-10080}
+
       Meilisearch__Url: http://meilisearch:7700
       Meilisearch__ApiKey: ${MEILI_MASTER_KEY:-dev_master_key_change_me}
       Meilisearch__VersesIndex: ${MEILI_INDEX:-verses}
-      Meilisearch__SyncOnStartup: ${MEILI_SYNC_ON_STARTUP:-true}
+
+      # Recomendo false inicialmente
+      Meilisearch__SyncOnStartup: ${MEILI_SYNC_ON_STARTUP:-false}
+
       Cors__Origins__0: ${PUBLIC_SITE_URL:-http://localhost:3000}
+
     ports:
       - "${API_PORT:-8080}:8080"
 
@@ -54,11 +76,17 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080}
         NEXT_PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:3000}
+
+    container_name: biblia-web
+    restart: unless-stopped
+
     depends_on:
       - api
+
     environment:
       NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080}
       NEXT_PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:3000}
+
     ports:
       - "${WEB_PORT:-3000}:3000"
 

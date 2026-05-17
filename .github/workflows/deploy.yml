@@ -1,0 +1,69 @@
+name: Deploy Biblia Online
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, runner-prod]
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login Docker Hub
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
+          -u "${{ secrets.DOCKER_USER }}" \
+          --password-stdin
+
+      # =====================================
+      # BUILD API
+      # =====================================
+      - name: Build API
+        run: |
+          docker build \
+            -f docker/backend.Dockerfile \
+            -t ${{ secrets.DOCKER_USER }}/biblia-api:latest \
+            .
+
+      - name: Push API
+        run: |
+          docker push ${{ secrets.DOCKER_USER }}/biblia-api:latest
+
+      # =====================================
+      # BUILD WEB
+      # =====================================
+      - name: Build WEB
+        run: |
+          docker build \
+            -f docker/frontend.Dockerfile \
+            --build-arg NEXT_PUBLIC_API_URL=https://biblia.portalmantec.com.br \
+            --build-arg NEXT_PUBLIC_SITE_URL=https://biblia.portalmantec.com.br \
+            -t ${{ secrets.DOCKER_USER }}/biblia-web:latest \
+            .
+
+      - name: Push WEB
+        run: |
+          docker push ${{ secrets.DOCKER_USER }}/biblia-web:latest
+
+      # =====================================
+      # DEPLOY STACK
+      # =====================================
+      - name: Deploy Stack
+        run: |
+
+          docker pull ${{ secrets.DOCKER_USER }}/biblia-api:latest
+
+          docker pull ${{ secrets.DOCKER_USER }}/biblia-web:latest
+
+          cd ~/stacks/05-apps/biblia
+
+          docker stack deploy \
+            --with-registry-auth \
+            --env-file .env \
+            -c biblia.yml \
+            biblia

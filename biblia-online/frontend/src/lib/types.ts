@@ -49,6 +49,13 @@ export type SearchHit = {
   formatted?: string | null;
 };
 
+export type SearchResult = {
+  items: SearchHit[];
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+};
+
 export type Favorite = {
   id: string;
   bibleVersionId: string;
