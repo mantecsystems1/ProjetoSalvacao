@@ -14,7 +14,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # =====================================
+      # LOGIN DOCKER HUB
+      # =====================================
       - name: Login Docker Hub
+        working-directory: ./biblia-online
         run: |
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
           -u "${{ secrets.DOCKER_USER }}" \
@@ -24,13 +28,18 @@ jobs:
       # BUILD API
       # =====================================
       - name: Build API
+        working-directory: ./biblia-online
         run: |
           docker build \
-            -f docker/swarm/backend.Dockerfile \
+            -f docker/backend.Dockerfile \
             -t ${{ secrets.DOCKER_USER }}/biblia-api:latest \
             .
 
+      # =====================================
+      # PUSH API
+      # =====================================
       - name: Push API
+        working-directory: ./biblia-online
         run: |
           docker push ${{ secrets.DOCKER_USER }}/biblia-api:latest
 
@@ -38,15 +47,20 @@ jobs:
       # BUILD WEB
       # =====================================
       - name: Build WEB
+        working-directory: ./biblia-online
         run: |
           docker build \
-            -f docker/swarm/frontend.Dockerfile \
+            -f docker/frontend.Dockerfile \
             --build-arg NEXT_PUBLIC_API_URL=https://biblia.portalmantec.com.br \
             --build-arg NEXT_PUBLIC_SITE_URL=https://biblia.portalmantec.com.br \
             -t ${{ secrets.DOCKER_USER }}/biblia-web:latest \
             .
 
+      # =====================================
+      # PUSH WEB
+      # =====================================
       - name: Push WEB
+        working-directory: ./biblia-online
         run: |
           docker push ${{ secrets.DOCKER_USER }}/biblia-web:latest
 
