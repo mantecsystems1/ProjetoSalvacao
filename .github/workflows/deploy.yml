@@ -76,8 +76,11 @@ jobs:
 
           cd ~/stacks/05-apps/biblia
 
+          set -a
+          source .env
+          set +a
+
           docker stack deploy \
             --with-registry-auth \
-            --env-file .env \
             -c biblia.yml \
             biblia
