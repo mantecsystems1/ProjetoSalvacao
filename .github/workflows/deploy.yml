@@ -26,7 +26,7 @@ jobs:
       - name: Build API
         run: |
           docker build \
-            -f docker/swarm/backend.Dockerfile \
+            -f docker/backend.Dockerfile \
             -t ${{ secrets.DOCKER_USER }}/biblia-api:latest \
             .
 
@@ -40,7 +40,7 @@ jobs:
       - name: Build WEB
         run: |
           docker build \
-            -f docker/swarm/frontend.Dockerfile \
+            -f docker/frontend.Dockerfile \
             --build-arg NEXT_PUBLIC_API_URL=https://biblia.portalmantec.com.br \
             --build-arg NEXT_PUBLIC_SITE_URL=https://biblia.portalmantec.com.br \
             -t ${{ secrets.DOCKER_USER }}/biblia-web:latest \
