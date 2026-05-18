@@ -5,6 +5,14 @@ import { cn } from "@/lib/utils";
 export default function HomePage() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mb-8 rounded-3xl border border-yellow-300/30 bg-yellow-500/10 p-4 text-yellow-900 ring-1 ring-yellow-200/30 backdrop-blur-sm sm:p-5">
+        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-yellow-700 sm:text-base">
+          Aviso de desenvolvimento
+        </p>
+        <p className="mt-2 text-sm leading-6 text-yellow-800 sm:text-base">
+          Este site ainda está em desenvolvimento. Algumas funcionalidades podem estar incompletas ou instáveis.
+        </p>
+      </div>
       <section className="overflow-hidden rounded-[2rem] bg-slate-950 text-white shadow-[0_40px_120px_rgba(15,23,42,0.25)]">
         <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
           <div className="space-y-6 px-6 py-10 sm:px-10 sm:py-14">
