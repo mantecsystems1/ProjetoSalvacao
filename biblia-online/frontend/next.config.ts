@@ -15,4 +15,4 @@ const nextConfig: NextConfig = {
   output: "standalone",
 };
 
-export default withPWA(nextConfig);
+export default process.env.ENABLE_PWA === "1" ? withPWA(nextConfig) : nextConfig;

@@ -25,7 +25,7 @@ export const useBibleStore = create<BibleState>()(
   persist(
     (set) => ({
       theme: "dark",
-      selectedVersionCode: "ARC",
+      selectedVersionCode: "",
       favorites: [],
       history: [],
       cachedChapters: {},

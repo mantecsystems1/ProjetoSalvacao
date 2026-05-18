@@ -14,7 +14,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # =====================================
+      # LOGIN DOCKER HUB
+      # =====================================
       - name: Login Docker Hub
+        working-directory: ./biblia-online
         run: |
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
           -u "${{ secrets.DOCKER_USER }}" \
@@ -24,13 +28,18 @@ jobs:
       # BUILD API
       # =====================================
       - name: Build API
+        working-directory: ./biblia-online
         run: |
           docker build \
             -f docker/backend.Dockerfile \
             -t ${{ secrets.DOCKER_USER }}/biblia-api:latest \
             .
 
+      # =====================================
+      # PUSH API
+      # =====================================
       - name: Push API
+        working-directory: ./biblia-online
         run: |
           docker push ${{ secrets.DOCKER_USER }}/biblia-api:latest
 
@@ -38,6 +47,7 @@ jobs:
       # BUILD WEB
       # =====================================
       - name: Build WEB
+        working-directory: ./biblia-online
         run: |
           docker build \
             -f docker/frontend.Dockerfile \
@@ -46,7 +56,11 @@ jobs:
             -t ${{ secrets.DOCKER_USER }}/biblia-web:latest \
             .
 
+      # =====================================
+      # PUSH WEB
+      # =====================================
       - name: Push WEB
+        working-directory: ./biblia-online
         run: |
           docker push ${{ secrets.DOCKER_USER }}/biblia-web:latest
 
@@ -62,8 +76,11 @@ jobs:
 
           cd ~/stacks/05-apps/biblia
 
+          set -a
+          source .env
+          set +a
+
           docker stack deploy \
             --with-registry-auth \
-            --env-file .env \
             -c biblia.yml \
             biblia

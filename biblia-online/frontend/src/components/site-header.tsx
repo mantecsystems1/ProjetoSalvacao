@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -12,8 +13,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { api } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
 import { useBibleStore } from "@/stores/bible-store";
+import type { BibleVersion } from "@/lib/types";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -25,8 +28,30 @@ export function SiteHeader() {
   const user = useAuthStore((s) => s.user);
   const clearSession = useAuthStore((s) => s.clearSession);
   const selectedVersionCode = useBibleStore((s) => s.selectedVersionCode);
+  const setSelectedVersionCode = useBibleStore((s) => s.setSelectedVersionCode);
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isOnline, setIsOnline] = useState(true);
+
+  async function fetchVersions(): Promise<BibleVersion[]> {
+    const response = await api.get<BibleVersion[]>('/versions');
+    return response.data;
+  }
+
+  const versionsQuery = useQuery({
+    queryKey: ['header-versions'],
+    queryFn: fetchVersions,
+  });
+
+  const versions = versionsQuery.data ?? [];
+  const activeVersionCode = versions.some((version) => version.code === selectedVersionCode)
+    ? selectedVersionCode
+    : (versions[0]?.code ?? "");
+
+  useEffect(() => {
+    if (versions.length > 0 && activeVersionCode !== selectedVersionCode) {
+      setSelectedVersionCode(activeVersionCode);
+    }
+  }, [activeVersionCode, selectedVersionCode, setSelectedVersionCode, versions.length]);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
@@ -65,9 +90,35 @@ export function SiteHeader() {
           <Link href="/" className="text-lg font-semibold tracking-tight">
             Biblia Online
           </Link>
-          <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
-            {selectedVersionCode}
-          </span>
+          <label htmlFor="selected-version" className="sr-only">
+            Selecionar versão
+          </label>
+          <select
+            id="selected-version"
+            value={activeVersionCode}
+            disabled={versionsQuery.isLoading || versions.length === 0}
+            onChange={(event) => {
+              const versionCode = event.target.value;
+              setSelectedVersionCode(versionCode);
+              router.push(`/livros/${encodeURIComponent(versionCode)}`);
+            }}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground",
+            )}
+          >
+            {versionsQuery.isLoading ? (
+              <option>Carregando versões...</option>
+            ) : versions.length ? (
+              versions.map((version) => (
+                <option key={version.id} value={version.code}>
+                  {version.name} ({version.code})
+                </option>
+              ))
+            ) : (
+              <option>Nenhuma versão disponível</option>
+            )}
+          </select>
         </div>
 
         <nav className="flex flex-wrap items-center gap-2">
