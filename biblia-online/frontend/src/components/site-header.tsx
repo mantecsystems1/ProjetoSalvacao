@@ -42,6 +42,17 @@ export function SiteHeader() {
     queryFn: fetchVersions,
   });
 
+  const versions = versionsQuery.data ?? [];
+  const activeVersionCode = versions.some((version) => version.code === selectedVersionCode)
+    ? selectedVersionCode
+    : (versions[0]?.code ?? "");
+
+  useEffect(() => {
+    if (versions.length > 0 && activeVersionCode !== selectedVersionCode) {
+      setSelectedVersionCode(activeVersionCode);
+    }
+  }, [activeVersionCode, selectedVersionCode, setSelectedVersionCode, versions.length]);
+
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
       const installEvent = event as BeforeInstallPromptEvent;
@@ -84,8 +95,13 @@ export function SiteHeader() {
           </label>
           <select
             id="selected-version"
-            value={selectedVersionCode}
-            onChange={(event) => setSelectedVersionCode(event.target.value)}
+            value={activeVersionCode}
+            disabled={versionsQuery.isLoading || versions.length === 0}
+            onChange={(event) => {
+              const versionCode = event.target.value;
+              setSelectedVersionCode(versionCode);
+              router.push(`/livros/${encodeURIComponent(versionCode)}`);
+            }}
             className={cn(
               buttonVariants({ variant: "outline", size: "sm" }),
               "rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground",
@@ -93,8 +109,8 @@ export function SiteHeader() {
           >
             {versionsQuery.isLoading ? (
               <option>Carregando versões...</option>
-            ) : versionsQuery.data?.length ? (
-              versionsQuery.data.map((version) => (
+            ) : versions.length ? (
+              versions.map((version) => (
                 <option key={version.id} value={version.code}>
                   {version.name} ({version.code})
                 </option>
